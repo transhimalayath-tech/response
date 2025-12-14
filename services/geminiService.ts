@@ -46,7 +46,7 @@ export const generateEmailResponse = async (request: GenerationRequest, apiKey: 
 
   const systemInstruction = `
     You are an expert customer support and sales representative for an affiliate marketing company. 
-    Your name is Alex. You are a native ${nationality} English speaker.
+    Your name is ${context.senderAlias || 'Alex'}. You are a native ${nationality} English speaker.
     
     Your Goal:
     ${isReply ? "1. Reply to the customer's email efficiently and helpfully." : "1. Draft a new email to the customer based on the user's prompt."}

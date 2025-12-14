@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Send, Copy, RefreshCw, Mail, Sparkles, AlertCircle, ChevronRight, Globe, Lightbulb, Key, Clock, MapPin, User, Users } from 'lucide-react';
+import { Send, Copy, RefreshCw, Mail, Sparkles, AlertCircle, ChevronRight, Globe, Lightbulb, Key, Clock, MapPin, User, Users, BadgeCheck, Shield } from 'lucide-react';
 import { Tone, Nationality, EmailContext, GenerationResponse } from './types';
 import { ToneSelector } from './components/ToneSelector';
 import { NationalitySelector } from './components/NationalitySelector';
@@ -29,7 +29,7 @@ const App: React.FC = () => {
   });
 
   // Sidebar Tab State
-  const [activeTab, setActiveTab] = useState<'compose' | 'time'>('compose');
+  const [activeTab, setActiveTab] = useState<'compose' | 'time' | 'identity'>('compose');
 
   // Location & Time State
   const [userTimezone, setUserTimezone] = useState(() => {
@@ -49,6 +49,7 @@ const App: React.FC = () => {
   const [emailContent, setEmailContent] = useState('');
   const [tone, setTone] = useState<Tone>(Tone.PROFESSIONAL);
   const [nationality, setNationality] = useState<Nationality>(Nationality.AMERICAN);
+  const [senderAlias, setSenderAlias] = useState('Alex'); // Default Alias
   
   // Context Data State
   const [customerName, setCustomerName] = useState('');
@@ -98,7 +99,8 @@ const App: React.FC = () => {
       productName,
       affiliateLink,
       keyPoints,
-      customInstructions
+      customInstructions,
+      senderAlias
     };
 
     try {
@@ -175,7 +177,18 @@ const App: React.FC = () => {
               }`}
             >
               <Clock size={16} className="mr-2" />
-              Time & Geo
+              Time
+            </button>
+            <button 
+              onClick={() => setActiveTab('identity')} 
+              className={`flex-1 flex items-center justify-center py-2 text-sm font-medium rounded-md transition-all ${
+                activeTab === 'identity' 
+                  ? 'bg-white shadow-sm text-blue-700' 
+                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+              }`}
+            >
+              <User size={16} className="mr-2" />
+              Identity
             </button>
           </div>
         </div>
@@ -189,6 +202,54 @@ const App: React.FC = () => {
               setClientTimezone={setClientTimezone}
               availableTimezones={COMMON_TIMEZONES}
             />
+          </div>
+        ) : activeTab === 'identity' ? (
+          <div className="flex-grow animate-in fade-in duration-300 space-y-6">
+             <div className="bg-blue-50 border border-blue-100 rounded-xl p-5 relative overflow-hidden">
+                <div className="relative z-10">
+                   <h3 className="text-blue-900 font-bold flex items-center text-lg mb-2">
+                      <BadgeCheck size={20} className="mr-2 text-blue-600" />
+                      Sender Identity
+                   </h3>
+                   <p className="text-sm text-blue-700 mb-4">
+                      Configure the persona used for your correspondence. Using a consistent Western alias is standard practice in affiliate marketing to build familiarity.
+                   </p>
+                </div>
+                <div className="absolute -right-4 -bottom-4 text-blue-100/80">
+                   <Shield size={100} />
+                </div>
+             </div>
+
+             <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Alias Name
+                  </label>
+                  <input
+                    type="text"
+                    value={senderAlias}
+                    onChange={(e) => setSenderAlias(e.target.value)}
+                    placeholder="e.g. Alex, Sarah, Michael"
+                    className="w-full p-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-700 bg-white"
+                  />
+                  <p className="text-xs text-slate-500 mt-2">
+                     This name will appear in your email signature and will be used by the AI to introduce itself.
+                  </p>
+                </div>
+
+                <div className="bg-slate-100 p-4 rounded-lg border border-slate-200">
+                    <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Preview Signature</h4>
+                    <div className="flex items-center text-slate-600 text-sm bg-white p-3 rounded border border-slate-100">
+                        <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 mr-3 font-bold text-lg">
+                           {senderAlias.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="font-bold text-slate-800">{senderAlias}</p>
+                          <p className="text-xs text-slate-500">Customer Success | Affiliate Team</p>
+                        </div>
+                    </div>
+                </div>
+             </div>
           </div>
         ) : (
           <div className="space-y-6 flex-grow animate-in fade-in duration-300">
@@ -451,11 +512,11 @@ const App: React.FC = () => {
                 {/* Email Footer Preview */}
                 <div className="px-8 pb-8 pt-4">
                   <div className="border-t border-slate-100 pt-4 flex items-center text-slate-400 text-sm">
-                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mr-3 font-bold">
-                       A
+                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mr-3 font-bold uppercase">
+                       {senderAlias.charAt(0)}
                     </div>
                     <div>
-                      <p className="font-medium text-slate-600">Alex</p>
+                      <p className="font-medium text-slate-600">{senderAlias}</p>
                       <p className="text-xs">Customer Success | Affiliate Team</p>
                     </div>
                   </div>

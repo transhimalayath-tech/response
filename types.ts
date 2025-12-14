@@ -17,6 +17,7 @@ export interface EmailContext {
   affiliateLink: string;
   keyPoints: string;
   customInstructions: string;
+  senderAlias?: string;
 }
 
 export interface GenerationRequest {
