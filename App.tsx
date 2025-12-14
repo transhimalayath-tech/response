@@ -1,11 +1,17 @@
-import React, { useState } from 'react';
-import { Send, Copy, RefreshCw, Mail, Sparkles, AlertCircle, ChevronRight, Globe } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Send, Copy, RefreshCw, Mail, Sparkles, AlertCircle, ChevronRight, Globe, Key } from 'lucide-react';
 import { Tone, Nationality, EmailContext, GenerationResponse } from './types';
 import { ToneSelector } from './components/ToneSelector';
 import { NationalitySelector } from './components/NationalitySelector';
 import { generateEmailResponse } from './services/geminiService';
 
 const App: React.FC = () => {
+  // Configuration State
+  // Initialize from process.env (if built) or localStorage
+  const [apiKey, setApiKey] = useState(() => {
+    return process.env.API_KEY || localStorage.getItem('gemini_api_key') || '';
+  });
+
   // State
   const [emailContent, setEmailContent] = useState('');
   const [tone, setTone] = useState<Tone>(Tone.PROFESSIONAL);
@@ -22,7 +28,19 @@ const App: React.FC = () => {
   const [response, setResponse] = useState<GenerationResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Update localStorage when apiKey changes
+  useEffect(() => {
+    if (apiKey) {
+      localStorage.setItem('gemini_api_key', apiKey);
+    }
+  }, [apiKey]);
+
   const handleGenerate = async () => {
+    if (!apiKey) {
+      setError("API Key is missing. Please enter it in the settings below.");
+      return;
+    }
+
     if (!emailContent.trim()) {
       setError("Please paste the customer's email content.");
       return;
@@ -40,17 +58,17 @@ const App: React.FC = () => {
     };
 
     try {
+      // Pass the apiKey explicitly
       const result = await generateEmailResponse({
         emailContent,
         tone,
         nationality,
         context
-      });
+      }, apiKey);
       setResponse(result);
     } catch (e: any) {
-      // Display the actual error message to help with debugging (e.g., API key issues)
       const errorMessage = e instanceof Error ? e.message : "Failed to generate response";
-      setError(`Error: ${errorMessage}. Please check your configuration.`);
+      setError(`Error: ${errorMessage}. Please check your API key.`);
     } finally {
       setIsGenerating(false);
     }
@@ -148,6 +166,26 @@ const App: React.FC = () => {
             <ToneSelector selectedTone={tone} onSelect={setTone} />
           </div>
 
+          {/* API Key Configuration - Visible if env var missing */}
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center">
+              <Key size={14} className="mr-1.5 text-slate-400" />
+              API Key Configuration
+            </label>
+            <input
+              type="password"
+              placeholder="Paste Gemini API Key here..."
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              className={`w-full p-2 rounded border text-sm focus:outline-none focus:border-blue-400 transition-colors ${
+                !apiKey && error ? 'border-red-300 bg-red-50' : 'border-slate-200'
+              }`}
+            />
+            <p className="text-xs text-slate-400 mt-1">
+              {process.env.API_KEY ? 'Loaded from environment.' : 'Saved locally in your browser.'}
+            </p>
+          </div>
+
         </div>
 
         {/* Action Area */}
@@ -194,7 +232,7 @@ const App: React.FC = () => {
               </div>
               <p className="text-lg font-medium">Ready to draft your email</p>
               <p className="text-sm mt-2 max-w-xs text-center">
-                Select your preferred speaker style (American, British, Australian), paste the customer's message, and hit generate.
+                Select your preferred speaker style, paste the customer's message, and enter your API key to start.
               </p>
             </div>
           ) : (

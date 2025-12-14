@@ -1,13 +1,9 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { GenerationRequest, GenerationResponse, Nationality } from "../types";
 
-export const generateEmailResponse = async (request: GenerationRequest): Promise<GenerationResponse> => {
-  // Initialize inside the function to avoid top-level crashes if process is undefined during module load
-  // and to ensure we pick up the latest environment state.
-  const apiKey = process.env.API_KEY;
-  
+export const generateEmailResponse = async (request: GenerationRequest, apiKey: string): Promise<GenerationResponse> => {
   if (!apiKey) {
-    throw new Error("API Key is missing. Please configure the API_KEY environment variable.");
+    throw new Error("API Key is missing. Please enter your API key in the configuration section.");
   }
 
   const ai = new GoogleGenAI({ apiKey });
