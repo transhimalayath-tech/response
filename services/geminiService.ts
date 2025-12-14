@@ -1,11 +1,12 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { GenerationRequest, GenerationResponse, Nationality } from "../types";
 
-const apiKey = process.env.API_KEY || '';
-
-const ai = new GoogleGenAI({ apiKey });
-
 export const generateEmailResponse = async (request: GenerationRequest): Promise<GenerationResponse> => {
+  // Initialize inside the function to avoid top-level crashes if process is undefined during module load
+  // and to ensure we pick up the latest environment state.
+  const apiKey = process.env.API_KEY || '';
+  const ai = new GoogleGenAI({ apiKey });
+
   const { emailContent, tone, nationality, context } = request;
 
   let nationalityDirectives = "";
@@ -94,8 +95,11 @@ export const generateEmailResponse = async (request: GenerationRequest): Promise
       },
     });
 
-    if (response.text) {
-      return JSON.parse(response.text) as GenerationResponse;
+    const text = response.text;
+    if (text) {
+      // Robustly parse JSON: remove markdown code blocks if present (e.g. ```json ... ```)
+      const cleanText = text.replace(/```json\n?|\n?```/g, '').trim();
+      return JSON.parse(cleanText) as GenerationResponse;
     }
     
     throw new Error("No response text generated");

@@ -47,8 +47,10 @@ const App: React.FC = () => {
         context
       });
       setResponse(result);
-    } catch (e) {
-      setError("Failed to generate response. Please try again.");
+    } catch (e: any) {
+      // Display the actual error message to help with debugging (e.g., API key issues)
+      const errorMessage = e instanceof Error ? e.message : "Failed to generate response";
+      setError(`Error: ${errorMessage}. Please check your configuration.`);
     } finally {
       setIsGenerating(false);
     }

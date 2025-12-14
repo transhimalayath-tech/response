@@ -11,6 +11,10 @@
         font-family: 'Inter', sans-serif;
       }
     </style>
+    <script>
+      // Polyfill for process.env to avoid ReferenceError in browser environments without bundlers
+      window.process = window.process || { env: {} };
+    </script>
   <script type="importmap">
 {
   "imports": {
