@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Send, Copy, RefreshCw, Mail, Sparkles, AlertCircle, ChevronRight, Globe, Key } from 'lucide-react';
+import { Send, Copy, RefreshCw, Mail, Sparkles, AlertCircle, ChevronRight, Globe, Lightbulb, Key } from 'lucide-react';
 import { Tone, Nationality, EmailContext, GenerationResponse } from './types';
 import { ToneSelector } from './components/ToneSelector';
 import { NationalitySelector } from './components/NationalitySelector';
@@ -7,8 +7,8 @@ import { generateEmailResponse } from './services/geminiService';
 
 const App: React.FC = () => {
   // Configuration State
-  // Initialize from process.env (if built) or localStorage
   const [apiKey, setApiKey] = useState(() => {
+    // Try to get from env first, then local storage
     return process.env.API_KEY || localStorage.getItem('gemini_api_key') || '';
   });
 
@@ -22,6 +22,7 @@ const App: React.FC = () => {
   const [productName, setProductName] = useState('');
   const [affiliateLink, setAffiliateLink] = useState('');
   const [keyPoints, setKeyPoints] = useState('');
+  const [customInstructions, setCustomInstructions] = useState('');
 
   // UI State
   const [isGenerating, setIsGenerating] = useState(false);
@@ -37,12 +38,15 @@ const App: React.FC = () => {
 
   const handleGenerate = async () => {
     if (!apiKey) {
-      setError("API Key is missing. Please enter it in the settings below.");
+      setError("API Key is missing. Please enter it in the configuration section below.");
       return;
     }
 
-    if (!emailContent.trim()) {
-      setError("Please paste the customer's email content.");
+    const hasEmail = emailContent.trim().length > 0;
+    const hasInstructions = customInstructions.trim().length > 0;
+
+    if (!hasEmail && !hasInstructions) {
+      setError("Please provide either the Customer Email Content (to reply) or a Specific Idea/Prompt (to create a new email).");
       return;
     }
     
@@ -54,21 +58,21 @@ const App: React.FC = () => {
       customerName,
       productName,
       affiliateLink,
-      keyPoints
+      keyPoints,
+      customInstructions
     };
 
     try {
-      // Pass the apiKey explicitly
       const result = await generateEmailResponse({
         emailContent,
         tone,
         nationality,
         context
-      }, apiKey);
+      }, apiKey); // Pass apiKey explicitly
       setResponse(result);
     } catch (e: any) {
       const errorMessage = e instanceof Error ? e.message : "Failed to generate response";
-      setError(`Error: ${errorMessage}. Please check your API key.`);
+      setError(`Error: ${errorMessage}.`);
     } finally {
       setIsGenerating(false);
     }
@@ -108,16 +112,30 @@ const App: React.FC = () => {
             <NationalitySelector selected={nationality} onSelect={setNationality} />
           </div>
 
-          {/* Incoming Email */}
+          {/* Incoming Email (Optional) */}
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Customer Email Content
+              Customer Email Content <span className="text-slate-400 font-normal ml-1">(Optional if creating new)</span>
             </label>
             <textarea
               value={emailContent}
               onChange={(e) => setEmailContent(e.target.value)}
-              placeholder="Paste the customer's email here..."
-              className="w-full h-40 p-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm text-slate-700 placeholder-slate-400 bg-slate-50 transition-all"
+              placeholder="Paste customer email to reply..."
+              className="w-full h-24 p-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm text-slate-700 placeholder-slate-400 bg-slate-50 transition-all"
+            />
+          </div>
+
+           {/* Custom Prompt / Idea Box */}
+           <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center">
+              <Lightbulb size={14} className="mr-1.5 text-slate-400" />
+              Specific Idea or Prompt <span className="text-slate-400 font-normal ml-1">(Required for new)</span>
+            </label>
+            <textarea
+              value={customInstructions}
+              onChange={(e) => setCustomInstructions(e.target.value)}
+              placeholder="e.g. Write a follow-up email about the summer sale ending in 24 hours..."
+              className="w-full h-24 p-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-amber-400 focus:border-transparent resize-none text-sm text-slate-700 placeholder-slate-400 bg-amber-50/50 transition-all"
             />
           </div>
 
@@ -150,10 +168,10 @@ const App: React.FC = () => {
                 className="w-full p-2 rounded border border-slate-200 text-sm focus:outline-none focus:border-blue-400"
               />
               <textarea
-                placeholder="Key points to mention (e.g. 20% off, expires Friday)..."
+                placeholder="Key points list (optional)..."
                 value={keyPoints}
                 onChange={(e) => setKeyPoints(e.target.value)}
-                className="w-full p-2 rounded border border-slate-200 text-sm focus:outline-none focus:border-blue-400 h-20 resize-none"
+                className="w-full p-2 rounded border border-slate-200 text-sm focus:outline-none focus:border-blue-400 h-16 resize-none"
               />
             </div>
           </div>
@@ -166,24 +184,21 @@ const App: React.FC = () => {
             <ToneSelector selectedTone={tone} onSelect={setTone} />
           </div>
 
-          {/* API Key Configuration - Visible if env var missing */}
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center">
-              <Key size={14} className="mr-1.5 text-slate-400" />
-              API Key Configuration
+          {/* API Key Configuration - Restored */}
+          <div className="pt-4 border-t border-slate-100">
+            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2 flex items-center">
+              <Key size={12} className="mr-1.5" />
+              API Configuration
             </label>
             <input
               type="password"
-              placeholder="Paste Gemini API Key here..."
+              placeholder="Paste Gemini API Key (starts with AIza...)"
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
-              className={`w-full p-2 rounded border text-sm focus:outline-none focus:border-blue-400 transition-colors ${
-                !apiKey && error ? 'border-red-300 bg-red-50' : 'border-slate-200'
+              className={`w-full p-2 rounded border text-xs focus:outline-none focus:border-blue-400 transition-colors ${
+                !apiKey && error ? 'border-red-300 bg-red-50' : 'border-slate-200 bg-white'
               }`}
             />
-            <p className="text-xs text-slate-400 mt-1">
-              {process.env.API_KEY ? 'Loaded from environment.' : 'Saved locally in your browser.'}
-            </p>
           </div>
 
         </div>
@@ -209,12 +224,12 @@ const App: React.FC = () => {
             {isGenerating ? (
               <>
                 <RefreshCw className="animate-spin mr-2" size={20} />
-                Drafting Response...
+                Drafting...
               </>
             ) : (
               <>
                 <Send className="mr-2" size={20} />
-                Generate Response
+                Generate Email
               </>
             )}
           </button>
@@ -231,8 +246,8 @@ const App: React.FC = () => {
                 <Mail size={32} className="text-slate-300" />
               </div>
               <p className="text-lg font-medium">Ready to draft your email</p>
-              <p className="text-sm mt-2 max-w-xs text-center">
-                Select your preferred speaker style, paste the customer's message, and enter your API key to start.
+              <p className="text-sm mt-2 max-w-xs text-center text-slate-400">
+                Paste a customer email to reply, OR use the "Specific Idea" box to start a new conversation.
               </p>
             </div>
           ) : (
